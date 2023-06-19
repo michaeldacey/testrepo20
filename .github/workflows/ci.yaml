@@ -26,8 +26,6 @@ jobs:
         npm install
         npm run build --if-present
         npm run test --if-present
-        cp bin/www server.js
-        sed -i 's/\.\.\/app/\.\/app/g' server.js
 
     - name: Docker image build
       uses: azure/docker-login@v1
