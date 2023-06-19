@@ -1,0 +1,50 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: 'Build and deploy Node.js image to Azure Web Custom Container App: mywebapp27229'
+
+on:
+  push:
+    branches:
+    - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Node.js version
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+    
+    - name: npm install, build, and test
+      run: |
+        npm install
+        npm run build --if-present
+        npm run test --if-present
+        cp bin/www server.js
+        sed -i 's/\.\.\/app/\.\/app/g' server.js
+
+    - name: Docker image build
+      uses: azure/docker-login@v1
+      with:
+        login-server: 'mywebappacr26245.azurecr.io' # default: index.docker.io
+        username: '2dd064eb-3f06-44d5-8145-c62fe070c45f'
+        password: 'gzq8Q~VqozwHsz4n.oUnDpJn6l4dxa9-s50nsb4d'  # Can use password but better to use personal access token
+    
+    - name: build and push image to registry tagged using Git commit id
+      run: |
+        docker build . -t mywebappacr26245.azurecr.io/basicnodeapi-image:${{ github.sha }}
+        docker push mywebappacr26245.azurecr.io/basicnodeapi-image:${{ github.sha }}
+
+    - name: 'Deploy to Azure Web App'
+      uses: azure/webapps-deploy@v2
+      with: 
+        app-name: 'mywebapp27229'
+        slot-name: 'production'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        images: mywebappacr26245.azurecr.io/basicnodeapi-image:${{ github.sha }}
